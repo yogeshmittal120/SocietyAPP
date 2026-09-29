@@ -1,15 +1,21 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from jose import jwt
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.security import hash_password, verify_password
 from app.db.session import get_db
 from app.models import Society, User
 from app.schemas.auth import (
+    LoginRequest,
     PasswordHashTestRequest,
     PasswordHashTestResponse,
     RegisterRequest,
     RegisterResponse,
+    TokenResponse,
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -76,4 +82,45 @@ def register(
         email=user.email,
         society_id=str(user.society_id),
         role=user.role,
+    )
+
+
+@router.post("/login", response_model=TokenResponse)
+def login(
+    payload: LoginRequest,
+    db: Session = Depends(get_db),
+) -> TokenResponse:
+    email = str(payload.email).strip().lower()
+
+    user = db.scalar(
+        select(User).where(User.email == email)
+    )
+
+    if user is None or not verify_password(payload.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    expires_at = datetime.now(timezone.utc) + timedelta(
+        minutes=settings.access_token_expire_minutes
+    )
+
+    token_payload = {
+        "sub": str(user.id),
+        "society_id": str(user.society_id),
+        "role": user.role,
+        "exp": expires_at,
+    }
+
+    access_token = jwt.encode(
+        token_payload,
+        settings.jwt_secret_key,
+        algorithm=settings.jwt_algorithm,
+    )
+
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
     )
