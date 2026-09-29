@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -87,16 +88,16 @@ def register(
 
 @router.post("/login", response_model=TokenResponse)
 def login(
-    payload: LoginRequest,
+    form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ) -> TokenResponse:
-    email = str(payload.email).strip().lower()
+    email = form_data.username.strip().lower()
 
     user = db.scalar(
         select(User).where(User.email == email)
     )
 
-    if user is None or not verify_password(payload.password, user.password_hash):
+    if user is None or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password.",
