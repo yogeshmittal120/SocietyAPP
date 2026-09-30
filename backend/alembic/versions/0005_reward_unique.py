@@ -5,6 +5,7 @@ Revises: 0004_status_delivered
 """
 
 from alembic import op
+from sqlalchemy import text
 
 
 revision = "0005_reward_unique"
@@ -19,7 +20,9 @@ def upgrade() -> None:
         "point_transactions",
         ["help_request_id"],
         unique=True,
-        postgresql_where=op.text("type = 'EARN' AND help_request_id IS NOT NULL"),
+        postgresql_where=text(
+            "type = 'EARN' AND help_request_id IS NOT NULL"
+        ),
     )
 
 
