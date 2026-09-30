@@ -44,6 +44,10 @@ class HelpRequest(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+    delivered_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     completed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
