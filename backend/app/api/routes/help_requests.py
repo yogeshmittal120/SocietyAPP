@@ -129,8 +129,8 @@ def accept_help_request(
     }
 
 
-@router.post("/{request_id}/complete")
-def complete_help_request(
+@router.post("/{request_id}/deliver")
+def deliver_help_request(
     request_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -154,13 +154,61 @@ def complete_help_request(
     if request.accepted_by_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the resident who accepted this request can complete it.",
+            detail="Only the resident who accepted this request can mark it delivered.",
         )
 
     if request.status != "ACCEPTED":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Only an accepted help request can be completed.",
+            detail="Only an accepted help request can be marked delivered.",
+        )
+
+    request.status = "DELIVERED"
+    request.delivered_at = datetime.now(timezone.utc)
+    request.updated_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(request)
+
+    return {
+        "request_id": str(request.id),
+        "status": request.status,
+        "delivered_at": request.delivered_at,
+    }
+
+
+@router.post("/{request_id}/complete")
+def complete_help_request(
+    request_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    request = db.scalar(
+        select(HelpRequest).where(HelpRequest.id == request_id)
+    )
+
+    if request is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Help request not found.",
+        )
+
+    if request.society_id != current_user.society_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this help request.",
+        )
+
+    if request.requester_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the requester can confirm completion.",
+        )
+
+    if request.status != "DELIVERED":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Only a delivered help request can be completed.",
         )
 
     request.status = "COMPLETED"
