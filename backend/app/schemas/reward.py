@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field
+from typing import Literal
+
+from pydantic import BaseModel
 
 
 class RewardCreate(BaseModel):
-    points: int = Field(gt=0, le=100)
+    points: Literal[10, 20, 50, 100]
 
 
 class RewardResponse(BaseModel):
