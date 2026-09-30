@@ -5,6 +5,7 @@ from app.api.routes.health import router as health_router
 from app.api.routes.help_requests import router as help_requests_router
 from app.api.routes.rewards import router as rewards_router
 from app.api.routes.users import router as users_router
+from app.api.routes.wallet import router as wallet_router
 from app.api.routes.societies import router as societies_router
 from app.core.config import settings
 
@@ -20,3 +21,4 @@ app.include_router(users_router)
 app.include_router(societies_router)
 app.include_router(help_requests_router)
 app.include_router(rewards_router)
+app.include_router(wallet_router)
