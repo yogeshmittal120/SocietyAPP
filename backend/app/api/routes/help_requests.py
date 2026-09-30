@@ -127,3 +127,51 @@ def accept_help_request(
         "accepted_by_id": str(request.accepted_by_id),
         "accepted_at": request.accepted_at,
     }
+
+
+@router.post("/{request_id}/complete")
+def complete_help_request(
+    request_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    request = db.scalar(
+        select(HelpRequest).where(HelpRequest.id == request_id)
+    )
+
+    if request is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Help request not found.",
+        )
+
+    if request.society_id != current_user.society_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this help request.",
+        )
+
+    if request.accepted_by_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the resident who accepted this request can complete it.",
+        )
+
+    if request.status != "ACCEPTED":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Only an accepted help request can be completed.",
+        )
+
+    request.status = "COMPLETED"
+    request.completed_at = datetime.now(timezone.utc)
+    request.updated_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(request)
+
+    return {
+        "request_id": str(request.id),
+        "status": request.status,
+        "completed_at": request.completed_at,
+    }
