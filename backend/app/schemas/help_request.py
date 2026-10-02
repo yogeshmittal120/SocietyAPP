@@ -18,6 +18,8 @@ class HelpRequestResponse(BaseModel):
     delivery_location: str
     status: str
     created_at: datetime
+    requester_id: str | None = None
+    accepted_by_id: str | None = None
 
 
 class HelpRequestListItem(BaseModel):
@@ -26,3 +28,5 @@ class HelpRequestListItem(BaseModel):
     description: str
     status: str
     created_at: datetime
+    requester_id: str | None = None
+    accepted_by_id: str | None = None
