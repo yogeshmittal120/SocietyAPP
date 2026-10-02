@@ -50,6 +50,8 @@ def create_help_request(
         delivery_location=request.delivery_location,
         status=request.status,
         created_at=request.created_at,
+        requester_id=str(request.requester_id) if request.requester_id else None,
+        accepted_by_id=str(request.accepted_by_id) if request.accepted_by_id else None,
     )
 
 
@@ -62,7 +64,11 @@ def list_help_requests(
         select(HelpRequest)
         .where(
             HelpRequest.society_id == current_user.society_id,
-            HelpRequest.status == "OPEN",
+            (
+                (HelpRequest.status == "OPEN")
+                | (HelpRequest.requester_id == current_user.id)
+                | (HelpRequest.accepted_by_id == current_user.id)
+            ),
         )
         .order_by(HelpRequest.created_at.desc())
     ).all()
@@ -74,6 +80,8 @@ def list_help_requests(
             description=r.description,
             status=r.status,
             created_at=r.created_at,
+            requester_id=str(r.requester_id) if r.requester_id else None,
+            accepted_by_id=str(r.accepted_by_id) if r.accepted_by_id else None,
         )
         for r in requests
     ]
