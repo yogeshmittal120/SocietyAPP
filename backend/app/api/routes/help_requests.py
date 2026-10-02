@@ -117,6 +117,8 @@ def get_help_request(
         delivery_location=request.delivery_location,
         status=request.status,
         created_at=request.created_at,
+        requester_id=str(request.requester_id) if request.requester_id else None,
+        accepted_by_id=str(request.accepted_by_id) if request.accepted_by_id else None,
     )
 
 
