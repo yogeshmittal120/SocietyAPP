@@ -16,7 +16,7 @@ def get_me(
     society = db.get(Society, current_user.society_id)
 
     return {
-        "user_id": str(current_user.id),
+        "id": str(current_user.id),
         "email": current_user.email,
         "society_id": str(current_user.society_id),
         "society_name": society.name if society else None,
