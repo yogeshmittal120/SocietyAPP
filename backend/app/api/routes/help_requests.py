@@ -79,6 +79,39 @@ def list_help_requests(
     ]
 
 
+@router.get("/{request_id}", response_model=HelpRequestResponse)
+def get_help_request(
+    request_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> HelpRequestResponse:
+    request = db.scalar(
+        select(HelpRequest).where(HelpRequest.id == request_id)
+    )
+
+    if request is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Help request not found.",
+        )
+
+    if request.society_id != current_user.society_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this help request.",
+        )
+
+    return HelpRequestResponse(
+        id=str(request.id),
+        title=request.title,
+        description=request.description,
+        pickup_location=request.pickup_location,
+        delivery_location=request.delivery_location,
+        status=request.status,
+        created_at=request.created_at,
+    )
+
+
 @router.post("/{request_id}/accept")
 def accept_help_request(
     request_id: uuid.UUID,
