@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_user
 from app.db.session import get_db
 from app.models import HelpRequest, User
+from app.services.notifications import add_notification
 from app.schemas.help_request import (
     HelpRequestCreate,
     HelpRequestListItem,
@@ -160,6 +161,14 @@ def accept_help_request(
     request.status = "ACCEPTED"
     request.accepted_at = datetime.now(timezone.utc)
     request.updated_at = datetime.now(timezone.utc)
+    add_notification(
+        db,
+        society_id=request.society_id,
+        user_id=request.requester_id,
+        notification_type="REQUEST_ACCEPTED",
+        title="Your help request was accepted",
+        message=f'A resident accepted "{request.title}".',
+    )
 
     db.commit()
     db.refresh(request)
@@ -209,6 +218,14 @@ def deliver_help_request(
     request.status = "DELIVERED"
     request.delivered_at = datetime.now(timezone.utc)
     request.updated_at = datetime.now(timezone.utc)
+    add_notification(
+        db,
+        society_id=request.society_id,
+        user_id=request.requester_id,
+        notification_type="REQUEST_DELIVERED",
+        title="Your request was marked delivered",
+        message=f'"{request.title}" is marked delivered. Please confirm when complete.',
+    )
 
     db.commit()
     db.refresh(request)
@@ -257,6 +274,15 @@ def complete_help_request(
     request.status = "COMPLETED"
     request.completed_at = datetime.now(timezone.utc)
     request.updated_at = datetime.now(timezone.utc)
+    if request.accepted_by_id:
+        add_notification(
+            db,
+            society_id=request.society_id,
+            user_id=request.accepted_by_id,
+            notification_type="REQUEST_COMPLETED",
+            title="Your help was confirmed complete",
+            message=f'The requester confirmed "{request.title}" as complete.',
+        )
 
     db.commit()
     db.refresh(request)
