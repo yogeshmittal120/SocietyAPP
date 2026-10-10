@@ -11,6 +11,7 @@ class PasswordHashTestResponse(BaseModel):
 
 
 class RegisterRequest(BaseModel):
+    full_name: str = Field(min_length=1, max_length=120)
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     invite_code: str = Field(min_length=4, max_length=128)
@@ -18,6 +19,7 @@ class RegisterRequest(BaseModel):
 
 class RegisterResponse(BaseModel):
     user_id: str
+    full_name: str
     email: EmailStr
     society_id: str
     role: str
