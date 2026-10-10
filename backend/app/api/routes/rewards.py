@@ -10,6 +10,7 @@ from app.db.session import get_db
 from app.models import HelpRequest, User
 from app.models.point_transaction import PointTransaction
 from app.models.wallet import Wallet
+from app.services.notifications import add_notification
 from app.schemas.reward import RewardCreate, RewardResponse
 
 router = APIRouter(prefix="/help-requests", tags=["Rewards"])
@@ -100,6 +101,14 @@ def award_reward(
         description=f"Reward for help request {request.id}",
     )
     db.add(transaction)
+    add_notification(
+        db,
+        society_id=request.society_id,
+        user_id=request.accepted_by_id,
+        notification_type="APPRECIATION_AWARDED",
+        title="You received appreciation points",
+        message=f'You received {payload.points} points for helping a neighbour.',
+    )
     db.commit()
     db.refresh(wallet)
 
