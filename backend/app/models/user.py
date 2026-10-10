@@ -22,6 +22,7 @@ class User(Base):
         server_default=text("now()"),
     )
     email: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    full_name: Mapped[str | None] = mapped_column(Text, nullable=True)
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
     society_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
