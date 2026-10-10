@@ -44,7 +44,14 @@ def register(
     db: Session = Depends(get_db),
 ) -> RegisterResponse:
     email = str(payload.email).strip().lower()
+    full_name = " ".join(payload.full_name.split())
     invite_code = payload.invite_code.strip()
+
+    if not full_name:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Full name is required.",
+        )
 
     existing_user = db.scalar(
         select(User).where(User.email == email)
@@ -69,6 +76,7 @@ def register(
 
     user = User(
         email=email,
+        full_name=full_name,
         password_hash=hash_password(payload.password),
         society_id=society.id,
         role="resident",
@@ -80,6 +88,7 @@ def register(
 
     return RegisterResponse(
         user_id=str(user.id),
+        full_name=user.full_name or full_name,
         email=user.email,
         society_id=str(user.society_id),
         role=user.role,
